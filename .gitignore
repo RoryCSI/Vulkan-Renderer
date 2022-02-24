@@ -3,6 +3,9 @@
 ##
 ## Get latest from https://github.com/github/gitignore/blob/main/VisualStudio.gitignore
 
+# Vulkan (because it's big)
+Vulkan/
+
 # User-specific files
 *.rsuser
 *.suo
