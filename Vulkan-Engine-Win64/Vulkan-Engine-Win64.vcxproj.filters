@@ -13,10 +13,27 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="Shaders">
+      <UniqueIdentifier>{e744ba39-931c-4737-98e5-4b6fc30051a3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shaders\Vertex Shaders">
+      <UniqueIdentifier>{d90a6479-5b58-47fc-a194-65a4fea1abf9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shaders\Fragment Shaders">
+      <UniqueIdentifier>{80d21902-db2f-49ae-a551-1f629a042cf4}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Shaders\frag.frag">
+      <Filter>Shaders\Fragment Shaders</Filter>
+    </None>
+    <None Include="Shaders\vert.vert">
+      <Filter>Shaders\Vertex Shaders</Filter>
+    </None>
   </ItemGroup>
 </Project>
