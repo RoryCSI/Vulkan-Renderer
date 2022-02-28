@@ -28,6 +28,7 @@
 #include <optional>
 #include <set>
 #include <unordered_map>
+#include <thread>
 
 const uint32_t WIDTH = 800;
 const uint32_t HEIGHT = 600;
@@ -36,6 +37,9 @@ const std::string MODEL_PATH = "resources/Eagle/Orzel_przedni.obj";
 const std::string TEXTURE_PATH = "resources/Eagle/orzel-mat_Diffuse.jpeg";
 
 const int MAX_FRAMES_IN_FLIGHT = 2;
+
+glm::vec4 globalLightPos = { 0,0,0,0 };
+glm::vec4 globalLightColor = { 0,0,1,1 };
 
 const std::vector<const char*> validationLayers = {
     "VK_LAYER_KHRONOS_validation"
@@ -135,6 +139,8 @@ struct UniformBufferObject {
     alignas(16) glm::mat4 model;
     alignas(16) glm::mat4 view;
     alignas(16) glm::mat4 proj;
+    alignas(16) glm::vec4 lightColor;
+    alignas(16) glm::vec4 lightPos;
 };
 
 class HelloTriangleApplication {
@@ -220,30 +226,30 @@ private:
     }
 
     void initVulkan() {
-        createInstance();
-        setupDebugMessenger();
-        createSurface();
-        pickPhysicalDevice();
-        createLogicalDevice();
-        createSwapChain();
-        createImageViews();
-        createRenderPass();
-        createDescriptorSetLayout();
-        createGraphicsPipeline();
-        createCommandPool();
-        createDepthResources();
-        createFramebuffers();
-        createTextureImage();
-        createTextureImageView();
-        createTextureSampler();
-        loadModel();
-        createVertexBuffer();
-        createIndexBuffer();
-        createUniformBuffers();
-        createDescriptorPool();
-        createDescriptorSets();
-        createCommandBuffers();
-        createSyncObjects();
+            createInstance();
+            setupDebugMessenger();
+            createSurface();
+            pickPhysicalDevice();
+            createLogicalDevice();
+            createSwapChain();
+            createImageViews();
+            createRenderPass();
+            createDescriptorSetLayout();
+            createGraphicsPipeline();
+            createCommandPool();
+            createDepthResources();
+            createFramebuffers();
+            createTextureImage();
+            createTextureImageView();
+            createTextureSampler();
+            loadModel();
+            createVertexBuffer();
+            createIndexBuffer();
+            createUniformBuffers();
+            createDescriptorPool();
+            createDescriptorSets();
+            createCommandBuffers();
+            createSyncObjects();
     }
 
     void mainLoop() {
@@ -1329,6 +1335,8 @@ private:
         ubo.view = glm::lookAt(glm::vec3(40.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
         ubo.proj = glm::perspective(glm::radians(45.0f), swapChainExtent.width / (float)swapChainExtent.height, 0.1f, 1000.0f);
         ubo.proj[1][1] *= -1;
+        ubo.lightColor = globalLightColor;
+        ubo.lightPos = globalLightPos;
 
         void* data;
         vkMapMemory(device, uniformBuffersMemory[currentImage], 0, sizeof(ubo), 0, &data);
