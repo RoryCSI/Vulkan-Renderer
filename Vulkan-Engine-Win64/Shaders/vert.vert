@@ -4,12 +4,10 @@ layout(binding = 0) uniform UniformBufferObject {
     mat4 model;
     mat4 view;
     mat4 proj;
+    vec4 lightPos[4];
+    vec4 lightColor[4];
 } ubo;
 
-layout(binding = 2) uniform UniformBufferObjectLight {
-    vec4 lightColor;
-    vec4 lightPos;
-} uboLight;
 
 layout(location = 0) in vec3 inPosition;
 layout(location = 1) in vec3 inColor;
@@ -23,12 +21,15 @@ void main() {
     gl_Position = ubo.proj * ubo.view * ubo.model * vec4(inPosition, 1.0);
 
     vec4 worldPos = ubo.model * vec4(inPosition, 1.0);
+    vec4 toLight;
+    vec3 diffuse = vec3(0.04f,0.04f,0.04f);
+    for (int i = 0; i < 4; i++)
+    {
+        toLight = ubo.lightPos[i] - worldPos;
+        vec3 lightColor = ubo.lightColor[i].xyz * ubo.lightColor[i].w;
+        diffuse += ubo.lightColor[i].xyz * max(dot(normalize(toLight.xyz), inNormal), 0.0) * normalize(length(toLight.xyz));
+    }
 
-    vec4 toLight = uboLight.lightPos - worldPos;
-    vec3 lightColor = uboLight.lightColor.xyz * uboLight.lightColor.w;
-
-    //vec3 diffuse = lightColor * max(dot(
-
-    fragColor = inColor * uboLight.lightColor.xyz;
+    fragColor = inColor * diffuse;
     fragTexCoord = inTexCoord;
 }

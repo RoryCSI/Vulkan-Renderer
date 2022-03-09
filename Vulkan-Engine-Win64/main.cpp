@@ -123,13 +123,13 @@ struct Vertex {
         attributeDescriptions[3].binding = 0;
         attributeDescriptions[3].location = 3;
         attributeDescriptions[3].format = VK_FORMAT_R32G32B32_SFLOAT;
-        attributeDescriptions[3].offset = offsetof(Vertex, texCoord);
+        attributeDescriptions[3].offset = offsetof(Vertex, normal);
 
         return attributeDescriptions;
     }
 
     bool operator==(const Vertex& other) const {
-        return pos == other.pos && color == other.color && texCoord == other.texCoord;
+        return pos == other.pos && color == other.color && texCoord == other.texCoord && normal == other.normal;
     }
 };
 
@@ -145,11 +145,8 @@ struct UniformBufferObject {
     alignas(16) glm::mat4 model;
     alignas(16) glm::mat4 view;
     alignas(16) glm::mat4 proj;
-};
-
-struct UniformBufferObjectLight {
-    alignas(16) glm::vec4 lightColor;
-    alignas(16) glm::vec4 lightPos;
+    alignas(16) glm::vec4 lightPos[4];
+    alignas(16) glm::vec4 lightColor[4];
 };
 
 class HelloTriangleApplication {
@@ -623,14 +620,7 @@ private:
         samplerLayoutBinding.pImmutableSamplers = nullptr;
         samplerLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 
-        VkDescriptorSetLayoutBinding uboLightLayoutBinding{};
-        uboLayoutBinding.binding = 2;
-        uboLayoutBinding.descriptorCount = 1;
-        uboLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-        uboLayoutBinding.pImmutableSamplers = nullptr;
-        uboLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-
-        std::array<VkDescriptorSetLayoutBinding, 3> bindings = { uboLayoutBinding, samplerLayoutBinding, uboLightLayoutBinding };
+        std::array<VkDescriptorSetLayoutBinding, 2> bindings = { uboLayoutBinding, samplerLayoutBinding};
         VkDescriptorSetLayoutCreateInfo layoutInfo{};
         layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
         layoutInfo.bindingCount = static_cast<uint32_t>(bindings.size());
@@ -1054,16 +1044,16 @@ private:
 
                 vertex.color = { 1.0f, 1.0f, 1.0f };
 
-                if (uniqueVertices.count(vertex) == 0) {
-                    uniqueVertices[vertex] = static_cast<uint32_t>(vertices.size());
-                    vertices.push_back(vertex);
-                }
-
                 vertex.normal = {
                     attrib.normals[3 * index.normal_index + 0],
                     attrib.normals[3 * index.normal_index + 1],
                     attrib.normals[3 * index.normal_index + 2]
                 };
+
+                if (uniqueVertices.count(vertex) == 0) {
+                    uniqueVertices[vertex] = static_cast<uint32_t>(vertices.size());
+                    vertices.push_back(vertex);
+                }
 
                 indices.push_back(uniqueVertices[vertex]);
             }
@@ -1122,13 +1112,11 @@ private:
     }
 
     void createDescriptorPool() {
-        std::array<VkDescriptorPoolSize, 3> poolSizes{};
+        std::array<VkDescriptorPoolSize, 2> poolSizes{};
         poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
         poolSizes[0].descriptorCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
         poolSizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
         poolSizes[1].descriptorCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
-        poolSizes[2].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-        poolSizes[2].descriptorCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
 
         VkDescriptorPoolCreateInfo poolInfo{};
         poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
@@ -1165,12 +1153,7 @@ private:
             imageInfo.imageView = textureImageView;
             imageInfo.sampler = textureSampler;
 
-            VkDescriptorBufferInfo lightBufferInfo{};
-            bufferInfo.buffer = uniformBuffers[i];
-            bufferInfo.offset = 0;
-            bufferInfo.range = sizeof(UniformBufferObjectLight);
-
-            std::array<VkWriteDescriptorSet, 3> descriptorWrites{};
+            std::array<VkWriteDescriptorSet, 2> descriptorWrites{};
 
             descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
             descriptorWrites[0].dstSet = descriptorSets[i];
@@ -1187,14 +1170,6 @@ private:
             descriptorWrites[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
             descriptorWrites[1].descriptorCount = 1;
             descriptorWrites[1].pImageInfo = &imageInfo;
-
-            descriptorWrites[2].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-            descriptorWrites[2].dstSet = descriptorSets[i];
-            descriptorWrites[2].dstBinding = 2;
-            descriptorWrites[2].dstArrayElement = 0;
-            descriptorWrites[2].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-            descriptorWrites[2].descriptorCount = 1;
-            descriptorWrites[2].pBufferInfo = &lightBufferInfo;
 
             vkUpdateDescriptorSets(device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
         }
@@ -1367,24 +1342,37 @@ private:
         float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
 
         UniformBufferObject ubo{};
-        glm::mat4 modelMat = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, -13.0f, 0.0f));// , glm::vec3(0.0f, 1.0f, 0.0f);
-        ubo.model = glm::rotate(modelMat, time * glm::radians(90.0f) * 0.1f, glm::vec3(0.0f, 1.0f, 0.0f));
+        //glm::mat4 modelMat = glm::translate(glm::mat4(1.0f), glm::vec3(glm::cos(time) * (15 - 7.5f), -13.0f, glm::sin(time) * (15 - 7.5f)));// glm::vec3(0.0f, -13.0f, 0.0f));// , glm::vec3(0.0f, 1.0f, 0.0f);
+        glm::mat4 modelMat = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, -13.0f, 0.0f));
+        ubo.model = modelMat;// glm::rotate(modelMat, time * glm::radians(90.0f) * 0.1f, glm::vec3(0.0f, 1.0f, 0.0f));
         ubo.view = glm::lookAt(glm::vec3(40.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
         ubo.proj = glm::perspective(glm::radians(45.0f), swapChainExtent.width / (float)swapChainExtent.height, 0.1f, 1000.0f);
         ubo.proj[1][1] *= -1;
+
+        globalLightPos = glm::vec4(glm::cos(time) * (16 - 8), 0, glm::sin(time) * (16 - 8), 1);
+        globalLightColor = { 1.0f, 1.0f, 1.0f, 1.0f };
+        ubo.lightPos[0] = globalLightPos;
+        ubo.lightColor[0] = globalLightColor;
+
+        globalLightPos = glm::vec4(glm::cos(time) * (16 - 8), 5, glm::sin(time) * (16 - 8), 1);
+        globalLightColor = { 0.0f,0.0f,0.0f,1.0f };
+        ubo.lightPos[1] = globalLightPos;
+        ubo.lightColor[1] = globalLightColor;
+       
+        globalLightPos = glm::vec4(glm::cos(time) * (16 - 8), -5, glm::sin(time) * (16 - 8), 1);
+        globalLightColor = { 0.0f,0.0f, 0.0f,1.0f };
+        ubo.lightPos[2] = globalLightPos;
+        ubo.lightColor[2] = globalLightColor;
+
+        globalLightPos = glm::vec4(glm::cos(time) * (15 - 7.5f), glm::sin(time) * (15 - 7.5f), 0, 1);
+        globalLightColor = { 0.0f,0.0f, 0.0f,0.0f };
+        ubo.lightPos[3] = globalLightPos;
+        ubo.lightColor[3] = globalLightColor;
 
         void* data;
         vkMapMemory(device, uniformBuffersMemory[currentImage], 0, sizeof(ubo), 0, &data);
         memcpy(data, &ubo, sizeof(ubo));
         vkUnmapMemory(device, uniformBuffersMemory[currentImage]);
-
-        UniformBufferObjectLight uboLight{};
-        uboLight.lightColor = { 0,1,0,1 };
-        uboLight.lightPos = { 0,0,0,0 };
-
-        /*vkMapMemory(device, uniformBuffersMemory[currentImage], sizeof(ubo), sizeof(uboLight), 0, &data);
-        memcpy(data, &uboLight, sizeof(uboLight));
-        vkUnmapMemory(device, uniformBuffersMemory[currentImage]);*/
     }
 
     void drawFrame() {
