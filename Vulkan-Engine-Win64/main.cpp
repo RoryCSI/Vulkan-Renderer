@@ -1405,24 +1405,23 @@ private:
             eyePos = eyePos + 0.01f * glm::vec3(view[0][1], view[1][1], view[2][1]);
         }
 
-
         ubo.model = modelMat;// glm::rotate(modelMat, time * glm::radians(90.0f) * 0.1f, glm::vec3(0.0f, 1.0f, 0.0f));
         ubo.view = glm::lookAt(eyePos, eyePos+eyeDir, glm::vec3(0.0f, 1.0f, 0.0f));
         ubo.proj = glm::perspective(glm::radians(45.0f), swapChainExtent.width / (float)swapChainExtent.height, 0.1f, 1000.0f);
         ubo.proj[1][1] *= -1;
 
         globalLightPos = glm::vec4(glm::cos(time) * (16 - 8), 0, glm::sin(time) * (16 - 8), 1);
-        globalLightColor = { 1.0f, 1.0f, 1.0f, 1.0f };
+        globalLightColor = { 1.0f, 0.0f, 0.0f, 1.0f };
         ubo.lightPos[0] = globalLightPos;
         ubo.lightColor[0] = globalLightColor;
 
-        globalLightPos = glm::vec4(glm::cos(time) * (16 - 8), 5, glm::sin(time) * (16 - 8), 1);
-        globalLightColor = { 0.0f,0.0f,0.0f,1.0f };
+        globalLightPos = glm::vec4(glm::cos(time + 1.57f) * (16 - 8), 0, glm::sin(time + 1.57f) * (16 - 8), 1);
+        globalLightColor = { 0.0f,0.0f,1.0f,1.0f };
         ubo.lightPos[1] = globalLightPos;
         ubo.lightColor[1] = globalLightColor;
        
-        globalLightPos = glm::vec4(glm::cos(time) * (16 - 8), -5, glm::sin(time) * (16 - 8), 1);
-        globalLightColor = { 0.0f,0.0f, 0.0f,1.0f };
+        globalLightPos = glm::vec4(glm::cos(time + 3.14f) * (16 - 8), -5, glm::sin(time + 3.14f) * (16 - 8), 1);
+        globalLightColor = { 0.0f, 1.0f, 0.0f,1.0f };
         ubo.lightPos[2] = globalLightPos;
         ubo.lightColor[2] = globalLightColor;
 
