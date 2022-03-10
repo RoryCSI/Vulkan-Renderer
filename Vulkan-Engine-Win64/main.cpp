@@ -41,6 +41,15 @@ const int MAX_FRAMES_IN_FLIGHT = 2;
 glm::vec4 globalLightPos = { 0,0,0,0 };
 glm::vec4 globalLightColor = { 0,0,1,1 };
 
+glm::mat4 modelMat = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, -13.0f, 0.0f));
+
+glm::vec3 eyePos = glm::vec3(40.0f, 2.0f, 0.0f);
+glm::vec3 eyeDir = glm::vec3(-1, 0, 0);
+
+bool newPress = true;
+
+float angleX = -1.57f, angleY = 0;
+
 const std::vector<const char*> validationLayers = {
     "VK_LAYER_KHRONOS_validation"
 };
@@ -1343,9 +1352,62 @@ private:
 
         UniformBufferObject ubo{};
         //glm::mat4 modelMat = glm::translate(glm::mat4(1.0f), glm::vec3(glm::cos(time) * (15 - 7.5f), -13.0f, glm::sin(time) * (15 - 7.5f)));// glm::vec3(0.0f, -13.0f, 0.0f));// , glm::vec3(0.0f, 1.0f, 0.0f);
-        glm::mat4 modelMat = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, -13.0f, 0.0f));
+        
+        if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_2) == 1 && newPress)
+        {
+            newPress = false;
+            glfwSetCursorPos(window, WIDTH * 0.5f, HEIGHT * 0.5f);
+        }
+        else if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_2) == 1 && !newPress)
+        {
+            glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
+            double x, y;
+            glfwGetCursorPos(window, &x, &y);
+            
+            glfwSetCursorPos(window, WIDTH * 0.5f, HEIGHT * 0.5f);
+
+            angleX += 0.01f * float(WIDTH * 0.5f - x);
+            angleY += 0.01f * float(HEIGHT * 0.5f - y);
+            eyeDir = {
+                cos(angleY) * sin(angleX),
+                sin(angleY),
+                cos(angleY) * cos(angleX)
+            };
+        }
+        else
+        {
+            newPress = true;
+            glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+        }
+        glm::mat4 view = glm::lookAt(eyePos, eyePos + eyeDir, glm::vec3(0.0f, 1.0f, 0.0f));
+        if (glfwGetKey(window, GLFW_KEY_W) == 1)
+        {
+            eyePos = eyePos - 0.01f * glm::vec3(view[0][2], view[1][2], view[2][2]);
+        }
+        if (glfwGetKey(window, GLFW_KEY_S) == 1)
+        {
+            eyePos = eyePos + 0.01f * glm::vec3(view[0][2], view[1][2], view[2][2]);
+        }
+        if (glfwGetKey(window, GLFW_KEY_A) == 1)
+        {
+            eyePos = eyePos - 0.01f * glm::vec3(view[0][0], view[1][0], view[2][0]);
+        }
+        if (glfwGetKey(window, GLFW_KEY_D) == 1)
+        {
+            eyePos = eyePos + 0.01f * glm::vec3(view[0][0], view[1][0], view[2][0]);
+        }
+        if (glfwGetKey(window, GLFW_KEY_Q) == 1)
+        {
+            eyePos = eyePos - 0.01f * glm::vec3(view[0][1], view[1][1], view[2][1]);
+        }
+        if (glfwGetKey(window, GLFW_KEY_E) == 1)
+        {
+            eyePos = eyePos + 0.01f * glm::vec3(view[0][1], view[1][1], view[2][1]);
+        }
+
+
         ubo.model = modelMat;// glm::rotate(modelMat, time * glm::radians(90.0f) * 0.1f, glm::vec3(0.0f, 1.0f, 0.0f));
-        ubo.view = glm::lookAt(glm::vec3(40.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+        ubo.view = glm::lookAt(eyePos, eyePos+eyeDir, glm::vec3(0.0f, 1.0f, 0.0f));
         ubo.proj = glm::perspective(glm::radians(45.0f), swapChainExtent.width / (float)swapChainExtent.height, 0.1f, 1000.0f);
         ubo.proj[1][1] *= -1;
 
